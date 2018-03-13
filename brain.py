@@ -5,7 +5,7 @@ from pprint import pprint
 
 class Brain:
     el = El(32)
-    store = Store([2018, 2017, 2016])
+    store = Store([2018])
 
     scores = {}
 
@@ -25,8 +25,10 @@ class Brain:
                     if team not in self.scores.keys():
                         self.scores[team] = self.default_score
 
-                prediction = self.predict(red_alliance, blue_alliance, key=match["key"])
-                self.update_score(red_alliance, blue_alliance, prediction, match["red_score"], match["blue_score"])
+            prediction = self.predict(red_alliance, blue_alliance,
+                                      key=match["key"])
+            self.update_score(red_alliance, blue_alliance, prediction,
+                              match["score"])
 
     def predict(self, red_alliance, blue_alliance, key=False):
         red_score = sum([self.scores[team] for team in red_alliance])
@@ -43,10 +45,12 @@ class Brain:
         score = self.get_score(red_score, blue_score)
 
         for team in red_alliance:
-            self.scores[team] = self.el.update(self.scores[team], prediction, score)
+            self.scores[team] = self.el.update(self.scores[team], prediction,
+                                               score)
 
         for team in blue_alliance:
-            self.scores[team] = self.el.update(self.scores[team], 1 - prediction, score)
+            self.scores[team] = self.el.update(self.scores[team],
+                                               1 - prediction, score)
 
     def get_score(self, red_score, blue_score):
         if red_score - blue_score > 0:

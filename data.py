@@ -30,19 +30,19 @@ class Store:
             else:
                 return {}
 
-        self.tbapy.TBA._get = _new_tba_get
+        tbapy.TBA._get = _new_tba_get
 
     def load_cached(self):
         for year in self.years:
             if not os.path.exists("cache/" + str(year) +
-                                  self.CACHE_FILE_EXTENSION):
+                                  self.FILE_EXTENSION):
                 self.cache_match(year)
             else:
                 # compare last modified tag to of year to one on tba
                 self.check_for_update(year)
 
     def cache_match(self, year):
-        self.match[year] = []
+        self.matches[year] = []
         r = self.tbapy.events(year, simple=True)
 
         events_sorted = [ev for ev in sorted(r, key=lambda b: b["start_date"])
@@ -64,12 +64,9 @@ class Store:
                                            match.alliances["blue"]["score"]})
 
         pickle.dump(self.matches, open("cache/" + str(year) +
-                    self.FILE_EXTENSION))
+                    self.FILE_EXTENSION, "wb"))
 
     def check_for_update(self, year):
         loaded_cache = pickle.load(open("cache/" + str(year) +
                                    self.FILE_EXTENSION, "rb"))
-
-
-x = Store([2017],
-          "get your own key")
+        self.matches[year] = loaded_cache
