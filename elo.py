@@ -15,7 +15,7 @@ class El:
 
     def update(self, old, exp, score):
         """ Update the Elo rating for a player.
-        old (int)   : The previous Elo rating.
+        old (int): The previous Elo rating.
         exp (int): The expected score for this match.
         score (int): The actual score for this match.
 

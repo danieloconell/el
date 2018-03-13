@@ -14,7 +14,7 @@ for match in brain.store.years[2017]:
     else:
         results.append(False)
 
-    results1.append(match["score"] - a)** 2 )
+    results1.append((match["score"] - a)** 2 )
 
 print(str(round(results.count(True) / len(results)*100, 2)) + "%")
 print("Brier:")
