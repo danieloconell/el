@@ -16,8 +16,11 @@ class Brain:
         self.run_past_matches()
 
     def run_past_matches(self):
+        print(self.store.years)
         for year in self.store.years:
-            for match in self.store.years[year]:
+            print(year)
+            for match in self.store.matches[year]:
+                print(match)
                 red_alliance = match["red_alliance"]
                 blue_alliance = match["blue_alliance"]
 
@@ -28,7 +31,7 @@ class Brain:
             prediction = self.predict(red_alliance, blue_alliance,
                                       key=match["key"])
             self.update_score(red_alliance, blue_alliance, prediction,
-                              match["score"])
+                              match["red_score"], match["blue_score"])
 
     def predict(self, red_alliance, blue_alliance, key=False):
         red_score = sum([self.scores[team] for team in red_alliance])

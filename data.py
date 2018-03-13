@@ -55,9 +55,9 @@ class Store:
             for match in matches:
                 self.matches[year].append({"key": match.key,
                                            "red_alliance":
-                                           match.alliances["red"],
+                                           match.alliances["red"]["team_keys"],
                                            "blue_alliance":
-                                           match.alliances["blue"],
+                                           match.alliances["blue"]["team_keys"],
                                            "red_score":
                                            match.alliances["red"]["score"],
                                            "blue_score":
@@ -65,8 +65,10 @@ class Store:
 
         pickle.dump(self.matches, open("cache/" + str(year) +
                     self.FILE_EXTENSION, "wb"))
+        self.years = self.matches.keys()
 
     def check_for_update(self, year):
         loaded_cache = pickle.load(open("cache/" + str(year) +
                                    self.FILE_EXTENSION, "rb"))
-        self.matches[year] = loaded_cache
+        self.matches = loaded_cache
+        self.years = self.matches.keys()
