@@ -16,11 +16,8 @@ class Brain:
         self.run_past_matches()
 
     def run_past_matches(self):
-        print(self.store.years)
         for year in self.store.years:
-            print(year)
             for match in self.store.matches[year]:
-                print(match)
                 red_alliance = match["red_alliance"]
                 blue_alliance = match["blue_alliance"]
 
@@ -28,10 +25,10 @@ class Brain:
                     if team not in self.scores.keys():
                         self.scores[team] = self.default_score
 
-            prediction = self.predict(red_alliance, blue_alliance,
-                                      key=match["key"])
-            self.update_score(red_alliance, blue_alliance, prediction,
-                              match["red_score"], match["blue_score"])
+                prediction = self.predict(red_alliance, blue_alliance,
+                                          key=match["key"])
+                self.update_score(red_alliance, blue_alliance, prediction,
+                                  match["red_score"], match["blue_score"])
 
     def predict(self, red_alliance, blue_alliance, key=False):
         red_score = sum([self.scores[team] for team in red_alliance])
@@ -44,7 +41,8 @@ class Brain:
 
         return score
 
-    def update_score(self, red_alliance, blue_alliance, prediction, red_score, blue_score):
+    def update_score(self, red_alliance, blue_alliance, prediction, red_score,
+                     blue_score):
         score = self.get_score(red_score, blue_score)
 
         for team in red_alliance:
@@ -56,14 +54,12 @@ class Brain:
                                                1 - prediction, score)
 
     def get_score(self, red_score, blue_score):
-        if red_score - blue_score > 0:
-            return 1
-        elif red_score - blue_score < 0:
+        if not red_score:
             return 0
-        elif red_score == blue_score:
-            return 0.5
-        # return red_score / (red_score + blue_score)
-        return None
+        elif not blue_score:
+            return 1
+        else:
+            return red_score / blue_score
 
 
 if __name__ == "__main__":

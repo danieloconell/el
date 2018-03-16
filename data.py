@@ -1,6 +1,8 @@
 import os
 
+import requests
 from tqdm import tqdm
+from datetime import datetime
 import pickle
 import tbapy
 
@@ -10,27 +12,25 @@ class Store:
     FILE_EXTENSION = "-event_matches.p"
 
     def __init__(self, years, key):
+
         self.years = years
-        self.tbapy = tbapy.TBA(key)
         self.matches = {}
 
         if not os.path.exists("cache/"):
             os.mkdir("cache")
 
-        self.load_cached()
-
         def _new_tba_get(self, url):
-            resp = self.session.get(self.URL_PRE + url,
-                                    headers={"X-TBA-Auth-Key": self.auth_key,
-                                             "If-Modified-Since":
-                                             self.last_modified})
+            resp = self.session.get(self.URL_PRE + url, headers={'X-TBA-Auth-Key': self.auth_key,
+                                    'If-Modified-Since': self.last_modified})
             if resp.status_code == 200:
-                self.last_modified_response = resp.headers["Last-Modified"]
+                self.last_modified_response = resp.headers['Last-Modified']
                 return resp.json()
             else:
                 return {}
 
         tbapy.TBA._get = _new_tba_get
+
+        self.load_cached()
 
     def load_cached(self):
         for year in self.years:
@@ -54,14 +54,10 @@ class Store:
             matches = self.tbapy.event_matches(event.key, simple=True)
             for match in matches:
                 self.matches[year].append({"key": match.key,
-                                           "red_alliance":
-                                           match.alliances["red"]["team_keys"],
-                                           "blue_alliance":
-                                           match.alliances["blue"]["team_keys"],
-                                           "red_score":
-                                           match.alliances["red"]["score"],
-                                           "blue_score":
-                                           match.alliances["blue"]["score"]})
+                                           "red_alliance": match.alliances["red"]["team_keys"],
+                                           "blue_alliance": match.alliances["blue"]["team_keys"],
+                                           "red_score": match.alliances["red"]["score"],
+                                           "blue_score": match.alliances["blue"]["score"]})
 
         pickle.dump(self.matches, open("cache/" + str(year) +
                     self.FILE_EXTENSION, "wb"))
@@ -72,3 +68,9 @@ class Store:
                                    self.FILE_EXTENSION, "rb"))
         self.matches = loaded_cache
         self.years = self.matches.keys()
+
+        if year != datetime.now().year:
+            return
+
+        current_time = datetime.now()
+        print(current_time)
