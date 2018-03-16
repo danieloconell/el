@@ -11,7 +11,9 @@ class Store:
 
     FILE_EXTENSION = "-event_matches.p"
 
-    def __init__(self, years, key):
+    def __init__(self, years):
+        key = open("key.txt").read().strip("\n")
+        print(key)
 
         self.years = years
         self.matches = {}
@@ -19,16 +21,7 @@ class Store:
         if not os.path.exists("cache/"):
             os.mkdir("cache")
 
-        def _new_tba_get(self, url):
-            resp = self.session.get(self.URL_PRE + url, headers={'X-TBA-Auth-Key': self.auth_key,
-                                    'If-Modified-Since': self.last_modified})
-            if resp.status_code == 200:
-                self.last_modified_response = resp.headers['Last-Modified']
-                return resp.json()
-            else:
-                return {}
-
-        tbapy.TBA._get = _new_tba_get
+        self.tbapy = tbapy.TBA(key)
 
         self.load_cached()
 
