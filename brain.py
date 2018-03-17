@@ -76,12 +76,12 @@ class Brain:
             red_score (int): Points scored by red alliance.
             blue_score (int): Points score by blue alliance.
         """
-        if not red_score:
-            return 0
-        elif not blue_score:
+        if red_score - blue_score > 0:
             return 1
-        else:
-            return red_score / blue_score
+        elif red_score - blue_score < 0:
+            return 0
+        elif red_score == blue_score:
+            return 0.5
 
 
 if __name__ == "__main__":
