@@ -1,5 +1,6 @@
 from brain import Brain
 from flask import Flask, request, render_template
+from pprint import pprint
 
 app = Flask(__name__, static_url_path="/static")
 brain = Brain()
@@ -10,9 +11,9 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/team/<int:team>")
+@app.route("/team/<string:team>")
 def team(team):
-    return render_template("team.html", content="",
+    return render_template("team.html", score=brain.scores["frc" + team],
                            name=team)
 
 
