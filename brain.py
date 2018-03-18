@@ -19,18 +19,18 @@ class Brain:
     def run_past_matches(self):
         """Iterate through matches in Store and calculate Elo rating for teams."""
         for year in self.store.years:
-            for match in self.store.matches[year]:
-                red_alliance = match["red_alliance"]
-                blue_alliance = match["blue_alliance"]
+            for event in self.store.matches[year]:
+                for match in self.store.matches[year][event]:
+                    red_alliance = match["red_alliance"]
+                    blue_alliance = match["blue_alliance"]
 
-                for team in red_alliance + blue_alliance:
-                    if team not in self.scores.keys():
-                        self.scores[team] = self.default_score
+                    for team in red_alliance + blue_alliance:
+                        if team not in self.scores.keys():
+                            self.scores[team] = self.default_score
 
-                prediction = self.predict(red_alliance, blue_alliance,
-                                          key=match["key"])
-                self.update_score(red_alliance, blue_alliance, prediction,
-                                  match["red_score"], match["blue_score"])
+                    prediction = self.predict(red_alliance, blue_alliance, key=match["key"])
+                    self.update_score(red_alliance, blue_alliance, prediction,
+                                      match["red_score"], match["blue_score"])
 
     def predict(self, red_alliance, blue_alliance, key=False):
         """Predict the winner of an FRC game.
@@ -49,8 +49,7 @@ class Brain:
 
         return score
 
-    def update_score(self, red_alliance, blue_alliance, prediction, red_score,
-                     blue_score):
+    def update_score(self, red_alliance, blue_alliance, prediction, red_score, blue_score):
         """Update the Elo rating of teams in an alliance.
 
         Args:
@@ -63,12 +62,10 @@ class Brain:
         score = self.get_score(red_score, blue_score)
 
         for team in red_alliance:
-            self.scores[team] = self.el.update(self.scores[team], prediction,
-                                               score)
+            self.scores[team] = self.el.update(self.scores[team], prediction, score)
 
         for team in blue_alliance:
-            self.scores[team] = self.el.update(self.scores[team],
-                                               1 - prediction, score)
+            self.scores[team] = self.el.update(self.scores[team], 1 - prediction, score)
 
     def get_score(self, red_score, blue_score):
         """Return the score of match to be used in prediction. 0 = loss, 1 = win.
@@ -76,14 +73,26 @@ class Brain:
             red_score (int): Points scored by red alliance.
             blue_score (int): Points score by blue alliance.
         """
+<<<<<<< HEAD
         if red_score - blue_score > 0:
             return 1
         elif red_score - blue_score < 0:
             return 0
         elif red_score == blue_score:
             return 0.5
+=======
+        if red_score < blue_score:
+            return 0
+        elif red_score > blue_score:
+            return 1
+        else:
+            return 0.5
+        # else:
+        #     return red_score / blue_score
+>>>>>>> Fix data store again
 
 
 if __name__ == "__main__":
     a = Brain()
+    # print(a.predict(["frc4774", "frc5333", "frc6434"], ["frc5985", "frc5663", "frc7128"]))
     # pprint(a.scores)

@@ -5,6 +5,7 @@ from tqdm import tqdm
 from datetime import datetime
 import pickle
 import tbapy
+from pprint import pprint
 
 
 class Store:
@@ -19,7 +20,8 @@ class Store:
 
         def _new_get(self, url):
             """This is used to be able to use the last modified header."""
-            r = get(self.URL_PRE + url, headers={"X-TBA-Auth-Key": self.auth_key, "If-Modified-Since": self.last_modified})
+            r = get(self.URL_PRE + url, headers={"X-TBA-Auth-Key": self.auth_key,
+                                                 "If-Modified-Since": self.last_modified})
             if r.status_code == 200:
                 self.last_modified_request = r.headers["Last-Modified"]
                 return r.json()
@@ -32,6 +34,7 @@ class Store:
 
         self.years = years
         self.matches = {}
+        self.events = {}
 
         if not os.path.exists("cache/"):
             os.mkdir("cache")
@@ -58,42 +61,61 @@ class Store:
         Args:
             year (int): Year to cache.
         """
-        self.matches[year] = []
-        r = self.tbapy.events(year, simple=True)
+        self.matches[year] = {}
+        self.events[year] = {}
 
+        r = self.tbapy.events(year)
         events_sorted = [e for e in sorted(r, key=lambda b: b["start_date"]) if e.event_type < 99]
 
         for event in tqdm(events_sorted, unit=" event"):
-            matches = self.tbapy.event_matches(event.key, simple=True)
-            for match in matches:
-                self.matches[year].append({"key": match.key,
-                                           "red_alliance": match.alliances["red"]["team_keys"],
-                                           "blue_alliance": match.alliances["blue"]["team_keys"],
-                                           "red_score": match.alliances["red"]["score"],
-                                           "blue_score": match.alliances["blue"]["score"]})
-                                        # "last_modified": self.tbapy.last_modified})
+            self.matches[year][event.key] = []
+            self.events[year][event.key] = {"end": event.end_date}
+            for match in self.tbapy.event_matches(event.key):
+                if match.alliances["red"]["score"] != -1:
+                    self.matches[year][event.key].append({"key": match.key,
+                                               "red_alliance": match.alliances["red"]["team_keys"],
+                                               "blue_alliance": match.alliances["blue"]["team_keys"],
+                                               "red_score": match.alliances["red"]["score"],
+                                               "blue_score": match.alliances["blue"]["score"],
+                                               "finish_time": match.post_result_time,
+                                               "last_modified": self.tbapy.last_modified_request})
 
-        pickle.dump(self.matches, open("cache/" + str(year) + self.FILE_EXTENSION, "wb"))
+        pickle.dump((self.events[year], self.matches[year]), open("cache/" + str(year) + self.FILE_EXTENSION, "wb"))
 
     def check_for_update(self, year):
-        print("checkign ")
         """Check if a cached year is up to date and update if possible.
 
         Args:
             year (int): Year to check for update.
         """
-        loaded_cache = pickle.load(open("cache/" + str(year) + self.FILE_EXTENSION, "rb"))
-        self.matches[year] = loaded_cache[year]
-        # print(loaded_cache)
+        loaded_events, loaded_matches = pickle.load(open("cache/" + str(year) + self.FILE_EXTENSION, "rb"))
 
-        current_year = datetime.now().year
+        now = datetime.now()
+        if year != now.year:
+            return
 
-        # if year != current_year:
-        # #     return
+        for event in loaded_events:
+            event_end = datetime.strptime(loaded_events[event]["end"], "%Y-%m-%d")
+            if event_end > now:
+                # print("{} has not finished".format(event))
+                self.tbapy.last_modified = str(now)
+                # matches = self.tbapy.event_matches(event)
+                # for match in matches:
+                #     if match.alliances["red"]["score"] != -1:
+                #         print(self.tbapy.last_modified_request)
+                        # match_list = {"key": match.key, "red_alliance": match.alliances["red"]["team_keys"],
+                        #               "blue_alliance": match.alliances["blue"]["team_keys"],
+                        #               "red_score": match.alliances["red"]["score"],
+                        #               "blue_score": match.alliances["blue"]["score"],
+                        #               "finish_time": match.post_result_time,
+                        #               "last_modified": self.tbapy.last_modified_request}
 
-        r = self.tbapy.events(year, simple=True)
-        events_sorted = [e for e in sorted(r, key=lambda b: b["start_date"]) if e.event_type < 99]
+        # r = self.tbapy.events(year, simple=True)
+        # events_sorted = [e for e in sorted(r, key=lambda b: b["start_date"]) if e.event_type < 99]
 
-        for event in events_sorted:
-            for match in self.tbapy.event_matches(event.key, simple=True):
-                print(type(self.matches[year][0]))
+        # for event in events_sorted:
+        #     for match in self.tbapy.event_matches(event.key, simple=True):
+        #         pass
+
+        self.matches[year] = loaded_matches
+        self.events[year] = loaded_events
