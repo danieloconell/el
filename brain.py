@@ -5,7 +5,7 @@ from pprint import pprint
 
 class Brain:
     el = El(32)
-    store = Store([2011])
+    store = Store(range(2008, 2019))
 
     scores = {}
 
