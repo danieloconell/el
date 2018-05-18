@@ -1,15 +1,14 @@
 import os
-
-from requests import get
-from requests import Session
-from tqdm import tqdm
-from datetime import datetime
-from collections import namedtuple
 import pickle
+from collections import namedtuple
+from datetime import datetime
+from requests import session
+
 import tbapy
 from pprint import pprint
+from tqdm import tqdm
 
-Event = namedtuple("Event", ["end_date", "key"])
+Event = namedtuple("Event", ["start_date", "end_date", "key"])
 Match = namedtuple("Match", ["key", "red_alliance", "blue_alliance", "red_score", "blue_score"])
 
 
@@ -21,7 +20,19 @@ class Store:
         """Create the Store class for the specified years.
 
         Args:
-            years (list): Of years to use for Store."""
+            years (list): Of years to use for Store.
+        """
+
+        def _new_tba_get(self, url):
+            resp = self.session.get(self.URL_PRE + url, headers={'X-TBA-Auth-Key': self.auth_key,
+                                    'If-Modified-Since': self.last_modified})
+            if resp.status_code == 200:
+                self.last_modified_response = resp.headers['Last-Modified']
+                return resp.json()
+            else:
+                return {}
+
+        tbapy.TBA._get = _new_tba_get
 
         key = open("key.txt").read().strip("\n")
 
@@ -33,6 +44,10 @@ class Store:
             os.mkdir("cache")
 
         self.tbapy = tbapy.TBA(key)
+
+        new = self.tbapy.events(2008)
+        print(self.tbapy.last_modified)
+        print(self.tbapy.last_modified_response)
 
         for year in self.years:
             # cache year if does not exist
@@ -52,26 +67,27 @@ class Store:
         self.events[year] = []
 
         # make tbapy request and only use events that are actual events
-        r = self.tbapy.events(year)
+        r = self.tbapy.events(year, simple=True)
         events_sorted = [e for e in sorted(r, key=lambda b: b["start_date"]) if e.event_type < 99]
 
         # iterate through events with a progress bar
         for event in tqdm(events_sorted, unit=" event"):
-            # create event and add to events
-            event_nt = Event(event.end_date, event.key)
+            # create match list and event and add to events
+            event_nt = Event(event.start_date, event.end_date, event.key)
+            self.matches[year][event.key] = []
             self.events[year].append(event_nt)
             # iterate through matches in event
-            for match in self.tbapy.event_matches(event.key):
-                # make sure match hasn't been played
+            for match in self.tbapy.event_matches(event.key, simple=True):
+                # only include qualifying matches when teams are playing there best
+                # if match.comp_level == "qm":
+                # make sure match has been played
                 if match.alliances["red"]["score"] != -1:
-                    # set the match of event to a list to append matches to
-                    self.matches[year][event.key] = []
                     # create match and add to matches
                     match_nt = Match(match.key,
-                                          match.alliances["red"]["team_keys"],
-                                          match.alliances["blue"]["team_keys"],
-                                          match.alliances["red"]["score"],
-                                          match.alliances["blue"]["score"])
+                                     match.alliances["red"]["team_keys"],
+                                     match.alliances["blue"]["team_keys"],
+                                     match.alliances["red"]["score"],
+                                     match.alliances["blue"]["score"])
                     self.matches[year][event.key].append(match_nt)
 
         # cache events and matches
@@ -101,19 +117,25 @@ class Store:
         # load cached year
         loaded_events, loaded_matches = self.load_cached(year)
 
-        # if it is not the current year it won't have an update
-        now = datetime.now()
-        if year != now.year:
-            self.matches[year] = loaded_matches
-            self.events[year] = loaded_events
-            return
+        # if it is less than current year it won't have an update
+        # now = datetime.now()
+        # if year < now.year:
+        #     self.matches[year] = loaded_matches
+        #     self.events[year] = loaded_events
+        #     return
 
-        # for event in loaded_events:
-        #     print(event)
-            # event_end = datetime.strptime(event, "%Y-%m-%d")
-            # print(loaded_events[event]["end"])
-            # if event_end > now:
-            #     pass
+        # get the latest modified tag
+
+        for event in loaded_events:
+            end_date = datetime.strptime(event.end_date, "%Y-%m-%d")
+            start_date = datetime.strptime(event.start_date, "%Y-%m-%d")
+            # if event has started
+            if start_date < now:
+                # check if all events are in cache
+                r = [match for match in self.tbapy.event_matches(event.key, simple=True)
+                     if match.alliances["red"]["score"] != -1]
+                if len(r) != len(loaded_matches[event.key]):
+                    print("{} not up to date".format(event.key))
 
         self.matches[year] = loaded_matches
         self.events[year] = loaded_events

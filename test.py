@@ -4,10 +4,11 @@ brain = Brain()
 
 results = []
 results1 = []
+
 print()
 for event in brain.store.matches[2018]:
     for match in brain.store.matches[2018][event]:
-        a = brain.predict(match["red_alliance"], match["blue_alliance"])
+        a = brain.predict(match.red_alliance, match.blue_alliance)
         score = brain.get_score(match["red_score"], match["blue_score"])
 
     results.append((score - a) ** 2)

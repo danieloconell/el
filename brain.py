@@ -19,6 +19,7 @@ class Brain:
     def run_past_matches(self):
         """Iterate through matches in Store and calculate Elo rating for teams."""
         for year in self.store.years:
+            # print(year)
             for event in self.store.events[year]:
                 for match in self.store.matches[year][event.key]:
                     red_alliance = match.red_alliance
@@ -85,4 +86,4 @@ class Brain:
 
 if __name__ == "__main__":
     a = Brain()
-    pprint(a.scores)
+    # pprint(a.scores)
